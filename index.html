@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusQuest — Gamified Study Timer</title>
+  <meta name="description" content="A gamified Pomodoro study timer for students. Earn XP, level up, and stay focused!" />
+
+  <!-- ✅ STEP 4: Replace the line below with your real Google AdSense code -->
+  <!--
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f4f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1918; color: #e8e6df; }
+      .card { background: #252422; border-color: #3a3835; }
+      .stat-card { background: #2e2c2a; }
+      .mode-btn { border-color: #444; color: #aaa; }
+      .mode-btn.active { background: #2d2960; color: #c8c3f8; border-color: #6b63cc; }
+      .bar-bg { background: #333; }
+      .dot { background: #333; border-color: #555; }
+      .history-item { border-color: #333; color: #aaa; }
+      .ad-slot { background: #2a2927; border-color: #3a3835; color: #666; }
+      .btn-sec { border-color: #444; color: #aaa; }
+      .btn-sec:hover { background: #333; }
+    }
+
+    .container { width: 100%; max-width: 480px; }
+
+    /* ── Ad slot (top) ── */
+    .ad-slot {
+      width: 100%;
+      max-width: 480px;
+      min-height: 90px;
+      background: #ebebeb;
+      border: 1px dashed #ccc;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 1.5rem; }
+    .app-title { font-size: 24px; font-weight: 600; color: #1a1a1a; }
+    @media (prefers-color-scheme: dark) { .app-title { color: #e8e6df; } }
+    .app-title span { color: #7F77DD; }
+    .app-sub { font-size: 13px; color: #888; margin-top: 4px; }
+
+    /* ── Stats ── */
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+    .stat-card { background: #eeecea; border-radius: 10px; padding: 0.75rem; text-align: center; }
+    .stat-val { font-size: 24px; font-weight: 600; color: #cc0000; }
+    @media (prefers-color-scheme: dark) { .stat-val { color: #ff3333; } }
+    .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* ── Level bar ── */
+    .level-bar-wrap { margin-bottom: 1.25rem; }
+    .level-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+    .level-label { font-weight: 600; }
+    .level-xp { color: #888; }
+    .bar-bg { background: #ddd; border-radius: 99px; height: 10px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; background: #7F77DD; transition: width 0.6s ease; }
+
+    /* ── Timer card ── */
+    .card {
+      background: #fff;
+      border: 1px solid #e0ddd6;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .mode-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .mode-btn {
+      font-size: 12px; padding: 6px 16px; border-radius: 99px;
+      border: 1px solid #ddd; background: transparent; color: #888; cursor: pointer; transition: all 0.15s;
+    }
+    .mode-btn.active { background: #EEEDFE; color: #3C3489; border-color: #AFA9EC; font-weight: 600; }
+    .mode-btn:hover:not(.active) { background: #f0efea; }
+
+    .time-display {
+      font-size: 80px; font-weight: 700; color: #cc0000;
+      letter-spacing: -3px; line-height: 1; margin-bottom: 0.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+    @media (prefers-color-scheme: dark) { .time-display { color: #ff3333; } }
+
+    .session-label { font-size: 14px; color: #888; margin-bottom: 1rem; }
+
+    .xp-badge {
+      display: inline-block; background: #FAEEDA; color: #633806;
+      font-size: 12px; padding: 4px 12px; border-radius: 99px; font-weight: 600; margin-bottom: 1.5rem;
+    }
+
+    .controls { display: flex; gap: 10px; justify-content: center; }
+
+    .btn-main {
+      padding: 12px 36px; border-radius: 10px; border: none;
+      background: #7F77DD; color: #fff; font-size: 16px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-main:hover { opacity: 0.88; }
+    .btn-main:active { transform: scale(0.97); }
+
+    .btn-sec {
+      padding: 12px 16px; border-radius: 10px;
+      border: 1px solid #ddd; background: transparent; color: #888;
+      font-size: 20px; cursor: pointer; transition: background 0.15s;
+    }
+
+    .sessions-row { display: flex; gap: 8px; justify-content: center; margin-top: 1.25rem; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #eee; border: 1px solid #ccc; transition: background 0.3s; }
+    .dot.done { background: #7F77DD; border-color: #7F77DD; }
+
+    /* ── History ── */
+    .history { margin-top: 0.5rem; }
+    .history-title { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #888;
+    }
+    .history-xp { color: #534AB7; font-weight: 600; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #26215C; color: #EEEDFE; font-size: 13px; padding: 10px 22px;
+      border-radius: 99px; opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; white-space: nowrap; z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── Bottom ad slot ── */
+    .ad-slot-bottom {
+      width: 100%; max-width: 480px; min-height: 250px;
+      background: #ebebeb; border: 1px dashed #ccc; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: #999; font-size: 12px; margin-top: 1.5rem;
+    }
+    @media (prefers-color-scheme: dark) { .ad-slot-bottom { background: #2a2927; border-color: #3a3835; color: #666; } }
+
+    .footer { font-size: 11px; color: #bbb; margin-top: 1.5rem; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ TOP AD UNIT — replace ins tag with your AdSense ad unit code -->
+  <div class="ad-slot" id="ad-top">
+    <!-- AdSense ad will appear here after approval -->
+    <!--
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="XXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    -->
+    Ad space (top banner)
+  </div>
+
+  <div class="container">
+
+    <div class="header">
+      <div class="app-title"><span>&#9889;</span> FocusQuest</div>
+      <div class="app-sub">Study. Earn XP. Level up.</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val" id="total-xp">0</div>
+        <div class="stat-label">Total XP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="sessions-done">0</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="streak">0</div>
+        <div class="stat-label">&#128293; Streak</div>
+      </div>
+    </div>
+
+    <div class="level-bar-wrap">
+      <div class="level-row">
+        <span class="level-label" id="level-label">Level 1 — Newbie</span>
+        <span class="level-xp" id="xp-to-next">0 / 100 XP</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" id="xp-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="mode-tabs">
+        <button class="mode-btn active" onclick="setMode('focus')">&#127775; Focus</button>
+        <button class="mode-btn" onclick="setMode('short')">&#9749; Short break</button>
+        <button class="mode-btn" onclick="setMode('long')">&#127774; Long break</button>
+      </div>
+      <div class="time-display" id="timer">25:00</div>
+      <div class="session-label" id="session-label">Time to focus! &#128170;</div>
+      <div class="xp-badge" id="xp-badge">+50 XP on completion</div>
+      <div class="controls">
+        <button class="btn-main" id="start-btn" onclick="toggleTimer()">Start</button>
+        <button class="btn-sec" onclick="resetTimer()" title="Reset">&#8635;</button>
+      </div>
+      <div class="sessions-row" id="dots"></div>
+    </div>
+
+    <div class="history" id="history-wrap" style="display:none">
+      <div class="history-title">Session log</div>
+      <div id="history-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ✅ BOTTOM AD UNIT — replace ins tag with your AdSense ad unit code -->
+  <div class="ad-slot-bottom" id="ad-bottom">
+    <!--
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="XXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    -->
+    Ad space (box / square)
+  </div>
+
+  <div class="footer">FocusQuest &copy; 2025 &nbsp;|&nbsp; Built for students who mean business</div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const MODES = {
+      focus: { label: 'Focus', secs: 25 * 60, xp: 50, msg: 'Time to focus! \u{1F4AA}' },
+      short: { label: 'Short break', secs: 5 * 60, xp: 10, msg: 'Take a quick breather \u{1F9D8}' },
+      long:  { label: 'Long break',  secs: 15 * 60, xp: 20, msg: 'Great work! Long break earned \u{1F389}' }
+    };
+
+    const LEVELS = [
+      { name: 'Newbie',      max: 100  },
+      { name: 'Apprentice',  max: 250  },
+      { name: 'Scholar',     max: 500  },
+      { name: 'Focused',     max: 900  },
+      { name: 'Expert',      max: 1500 },
+      { name: 'Master',      max: 2500 },
+      { name: 'Grandmaster', max: Infinity }
+    ];
+
+    let currentMode = 'focus';
+    let timeLeft = MODES.focus.secs;
+    let running = false;
+    let interval = null;
+    let totalXP = 0;
+    let sessionsDone = 0;
+    let streak = 0;
+    let lastSessionTime = null;
+    let cycleCount = 0;
+    let log = [];
+
+    // Load saved data
+    try {
+      const saved = JSON.parse(localStorage.getItem('focusquest') || '{}');
+      totalXP = saved.totalXP || 0;
+      sessionsDone = saved.sessionsDone || 0;
+      streak = saved.streak || 0;
+      cycleCount = saved.cycleCount || 0;
+      log = saved.log || [];
+      lastSessionTime = saved.lastSessionTime || null;
+    } catch(e) {}
+
+    function save() {
+      try {
+        localStorage.setItem('focusquest', JSON.stringify({ totalXP, sessionsDone, streak, cycleCount, log, lastSessionTime }));
+      } catch(e) {}
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function display(s) {
+      document.getElementById('timer').textContent = pad(Math.floor(s / 60)) + ':' + pad(s % 60);
+      document.title = pad(Math.floor(s / 60)) + ':' + pad(s % 60) + ' — FocusQuest';
+    }
+
+    function buildDots() {
+      const wrap = document.getElementById('dots');
+      wrap.innerHTML = '';
+      for (let i = 0; i < 4; i++) {
+        const d = document.createElement('div');
+        d.className = 'dot' + (i < cycleCount ? ' done' : '');
+        wrap.appendChild(d);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('total-xp').textContent = totalXP;
+      document.getElementById('sessions-done').textContent = sessionsDone;
+      document.getElementById('streak').textContent = streak;
+
+      let cumXP = 0, lvlIdx = 0;
+      for (let i = 0; i < LEVELS.length - 1; i++) {
+        if (totalXP < cumXP + LEVELS[i].max) { lvlIdx = i; break; }
+        cumXP += LEVELS[i].max;
+        lvlIdx = i + 1;
+      }
+      const lvl = LEVELS[lvlIdx];
+      const xpInLevel = totalXP - cumXP;
+      const pct = lvl.max === Infinity ? 100 : Math.min(100, Math.round((xpInLevel / lvl.max) * 100));
+      document.getElementById('level-label').textContent = 'Level ' + (lvlIdx + 1) + ' — ' + lvl.name;
+      document.getElementById('xp-to-next').textContent = lvl.max === Infinity ? 'Max level!' : xpInLevel + ' / ' + lvl.max + ' XP';
+      document.getElementById('xp-bar').style.width = pct + '%';
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function addLog(mode, xp) {
+      const now = new Date();
+      const time = now.getHours() + ':' + pad(now.getMinutes());
+      log.unshift({ mode, xp, time });
+      if (log.length > 8) log.pop();
+
+      const wrap = document.getElementById('history-wrap');
+      const list = document.getElementById('history-list');
+      wrap.style.display = 'block';
+      list.innerHTML = log.map(e =>
+        `<div class="history-item"><span>${e.time} — ${e.mode}</span><span class="history-xp">+${e.xp} XP</span></div>`
+      ).join('');
+    }
+
+    function sessionComplete() {
+      const mode = MODES[currentMode];
+      totalXP += mode.xp;
+      sessionsDone++;
+
+      const now = Date.now();
+      if (lastSessionTime && (now - lastSessionTime) < 30 * 60 * 1000) {
+        streak++;
+      } else {
+        streak = 1;
+      }
+      lastSessionTime = now;
+
+      if (currentMode === 'focus') {
+        cycleCount = (cycleCount + 1) % 4;
+        if (cycleCount === 0) showToast('4 sessions done! Take a long break 🏆');
+        else showToast('+' + mode.xp + ' XP earned! Keep going 🔥');
+      } else {
+        showToast('+' + mode.xp + ' XP! Break over, back to it!');
+      }
+
+      // Notification
+      if (Notification.permission === 'granted') {
+        new Notification('FocusQuest', { body: mode.label + ' complete! +' + mode.xp + ' XP earned.' });
+      }
+
+      addLog(mode.label, mode.xp);
+      save();
+      updateStats();
+      buildDots();
+      resetTimer(false);
+    }
+
+    function toggleTimer() {
+      if (running) {
+        clearInterval(interval);
+        running = false;
+        document.getElementById('start-btn').textContent = 'Resume';
+        document.title = 'FocusQuest — Paused';
+      } else {
+        if (Notification.permission === 'default') Notification.requestPermission();
+        running = true;
+        document.getElementById('start-btn').textContent = 'Pause';
+        interval = setInterval(() => {
+          timeLeft--;
+          display(timeLeft);
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            running = false;
+            document.getElementById('start-btn').textContent = 'Start';
+            sessionComplete();
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer(full = true) {
+      clearInterval(interval);
+      running = false;
+      timeLeft = MODES[currentMode].secs;
+      display(timeLeft);
+      document.getElementById('start-btn').textContent = 'Start';
+      document.title = 'FocusQuest';
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach((b, i) => {
+        b.classList.toggle('active', ['focus','short','long'][i] === mode);
+      });
+      const m = MODES[mode];
+      document.getElementById('session-label').textContent = m.msg;
+      document.getElementById('xp-badge').textContent = '+' + m.xp + ' XP on completion';
+      resetTimer();
+    }
+
+    // Init
+    display(timeLeft);
+    buildDots();
+    updateStats();
+    if (log.length > 0) addLog(log[0].mode, log[0].xp);
+  </script>
+</body>
+</html>
