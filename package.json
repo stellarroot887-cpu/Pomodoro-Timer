@@ -1,0 +1,23 @@
+{
+  "name": "primary",
+  "version": "1.0.0",
+  "description": "Gamified Pomodoro study timer for students",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stellarroot887-cpu/Pomodoro-Timer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stellarroot887-cpu/Pomodoro-Timer/issues"
+  },
+  "homepage": "https://github.com/stellarroot887-cpu/Pomodoro-Timer#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
